@@ -6,6 +6,7 @@ import { NotFoundPage } from '../../pages/NotFoundPage';
 import { AuthProviderLayout } from '../../auth/AuthProviderLayout';
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
 import { LoginPage } from '../../pages/LoginPage';
+import { AuditExplorerPage } from '../../features/audit/AuditExplorerPage';
 
 export const routes: RouteObject[] = [
   {
@@ -20,6 +21,7 @@ export const routes: RouteObject[] = [
             element: <AppShell />,
             children: [
               { index: true, element: <DashboardPage /> },
+              { path: 'audit/events', element: <AuditExplorerPage /> },
               {
                 path: 'audit/events/:id',
                 element: <EventDetailUnavailablePage />,

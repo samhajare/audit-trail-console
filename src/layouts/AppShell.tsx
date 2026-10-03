@@ -19,6 +19,9 @@ export function AppShell() {
           <NavLink to="/" end>
             Dashboard
           </NavLink>
+          <NavLink to="/audit/events" end>
+            Audit explorer
+          </NavLink>
         </nav>
         <button
           type="button"

@@ -1,6 +1,6 @@
 # Audit Trail Console
 
-React and TypeScript frontend for the Real-Time Audit Trail Explorer. This repository implements F0 through **F3: Dashboard**.
+React and TypeScript frontend for the Real-Time Audit Trail Explorer. This repository implements F0 through **F4: Audit Explorer**.
 
 The project rules and implementation plan are supplied as `CONSOLE_AGENTS.md` and `CONSOLE_IMPLEMENTATION_PLAN.md`.
 
@@ -41,10 +41,12 @@ Setup reference: [Auth0 React quickstart](https://auth0.com/docs/quickstart/spa/
 - `src/auth`: Auth0 provider, protected route, user controls, token bridge, and safe return-path handling.
 - `src/types`: local audit response contracts and the normalized API error type.
 - `src/features/dashboard`: typed statistics/activity queries and the dashboard view.
-- Other feature directories, `src/components`, and `src/utils`: reserved for subsequent phases.
+- `src/features/audit`: explorer queries, URL search validation, filter form, and paginated table.
+- `src/components`: shared query-error presentation.
+- Other feature directories and `src/utils`: reserved for subsequent phases.
 - `test`: React Testing Library and Vitest integration tests.
 
-No backend code is imported. Explorer/detail/timeline screens, SSE, DLQ, permission-aware UX, and feature flags are deferred to their planned phases. The compact-layout preference is in memory and resets on reload. Tests mock the Auth0 boundary and verify provider configuration, protected routes, user identity, login/logout failures, and real RTK Query bearer requests. Live tenant redirects require your Auth0 configuration and are not exercised by automated tests.
+No backend code is imported. Detail/timeline screens, SSE, DLQ, permission-aware UX, and feature flags are deferred to their planned phases. The compact-layout preference is in memory and resets on reload. Tests mock the Auth0 boundary and verify provider configuration, protected routes, user identity, login/logout failures, and real RTK Query bearer requests. Live tenant redirects require your Auth0 configuration and are not exercised by automated tests.
 
 ## API contracts and errors (F2)
 
@@ -79,4 +81,14 @@ Each panel supports loading, errors (including unauthorized/forbidden), empty re
 
 Latest activity links use database IDs and navigate to the reserved `/audit/events/:id` route with an unavailable message and a return link. This route makes no detail request: the full detail screen remains F5. Other severity spellings are not included in the high-severity metric. Statistics calls are independent snapshots and may shift while ingestion continues. Automated dashboard tests use mocked HTTP responses through the real store/API; live backend/Auth0 verification requires your configured environment.
 
-Next phase: **F4 — Audit Explorer**. It is not implemented here.
+## Audit Explorer (F4)
+
+The protected `/audit/events` route exposes all nine filters: event type, actor, resource type, resource ID, service, severity, correlation ID, from, and to. Text filters match exactly and combine with AND. From/to accept ISO date-times with an explicit time zone, with inclusive backend boundaries. Supported event types match the schema 1.0 contract; severity remains free text because the backend stores arbitrary severity strings.
+
+The URL is the source of truth for applied filters and pagination. Draft inputs are applied on form submission; changing filters or page size resets to page 1. Bookmarks, reloads, and browser back/forward restore the applied state. This avoids duplicating URL state in Redux. Server responses remain in RTK Query; no response copies are stored in slices. Only the documented query keys are forwarded to the backend. Duplicate values, unsupported types, invalid dates/ranges, oversized text, and invalid pagination block API requests and display a validation error.
+
+Pagination defaults to page 1 and limit 25, supports any page size from 1 to 100, and retains filters between pages. Out-of-range pages have a recovery action. The table includes all required columns and a keyboard-focusable scroll region for smaller screens. Loading, network/HTTP errors (including 401/403), retry, and empty states are explicit. Previous-search rows are hidden while a different search loads. Pagination follows backend persistence order and can shift between requests during ingestion.
+
+Row links use database `id` and reach the existing reserved detail route. The full detail screen remains F5; no detail endpoint, timeline, permission helpers, SSE, flags, filter drawers, or virtualization were added. Automated tests use mocked HTTP responses with real routing and RTK Query; live backend/Auth0 verification still requires a configured environment.
+
+Next phase: **F5 — Event Detail**. It is not implemented here.

@@ -108,6 +108,21 @@ describe('application foundation', () => {
 });
 
 describe('Auth0 integration', () => {
+  it('protects bookmarked explorer searches and preserves their return path', async () => {
+    auth.isAuthenticated = false;
+    renderApp('/audit/events?actor=test&page=2');
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Sign in to Audit Trail Console',
+      }),
+    ).toBeInTheDocument();
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Log in' }));
+    expect(auth.loginWithRedirect).toHaveBeenCalledWith({
+      appState: { returnTo: '/audit/events?actor=test&page=2' },
+    });
+  });
   it('shows login instead of the protected shell and preserves the requested path', async () => {
     auth.isAuthenticated = false;
     const user = userEvent.setup();

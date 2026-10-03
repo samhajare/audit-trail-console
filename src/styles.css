@@ -11,6 +11,76 @@
   align-items: center;
   gap: 0.75rem;
 }
+.audit-explorer {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+.audit-explorer h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.filter-grid label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+.filter-grid input,
+.filter-grid select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #9aa8b8;
+  border-radius: 0.35rem;
+  padding: 0.55rem;
+  background: white;
+  font: inherit;
+  color: inherit;
+}
+.audit-results {
+  min-width: 0;
+}
+.audit-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.audit-table caption {
+  text-align: left;
+  margin-bottom: 0.75rem;
+  color: #526477;
+}
+.audit-table th,
+.audit-table td {
+  padding: 0.75rem;
+  vertical-align: top;
+  border-bottom: 1px solid #d9e0e8;
+  min-width: 8rem;
+  max-width: 20rem;
+  overflow-wrap: anywhere;
+}
+.audit-table th {
+  background: #f3f5f8;
+}
+.audit-pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+nav a + a {
+  margin-left: 1rem;
+}
 .dashboard {
   display: grid;
   gap: 1.5rem;
