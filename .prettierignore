@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+package-lock.json
+CONSOLE_AGENTS.md
+CONSOLE_IMPLEMENTATION_PLAN.md
