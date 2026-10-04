@@ -14,7 +14,12 @@ const auth = vi.hoisted(() => ({
   isLoading: false,
   isAuthenticated: true,
   error: undefined as Error | undefined,
-  user: { sub: 'auth0|test', name: 'Test User', email: 'test@example.com' },
+  user: {
+    sub: 'auth0|test',
+    name: 'Test User',
+    email: 'test@example.com',
+    'https://audit-trail.example.com/permissions': ['audit:read'] as string[],
+  },
   loginWithRedirect: vi.fn(),
   logout: vi.fn(),
   getAccessTokenSilently: vi.fn(),
@@ -34,6 +39,7 @@ vi.mock('../src/config/env', () => ({
     auth0Domain: 'test.auth0.com',
     auth0ClientId: 'test-client',
     auth0Audience: 'https://test-api.example.com',
+    auth0PermissionsClaim: 'https://audit-trail.example.com/permissions',
     apiBaseUrl: 'http://localhost:3000',
   },
 }));
@@ -56,6 +62,7 @@ beforeEach(() => {
   auth.isLoading = false;
   auth.isAuthenticated = true;
   auth.error = undefined;
+  auth.user['https://audit-trail.example.com/permissions'] = ['audit:read'];
   auth.loginWithRedirect.mockReset().mockResolvedValue(undefined);
   auth.logout.mockReset().mockResolvedValue(undefined);
   auth.getAccessTokenSilently.mockReset().mockResolvedValue('test-token');
@@ -73,6 +80,40 @@ function renderApp(path = '/') {
 }
 
 describe('application foundation', () => {
+  it('marks detail navigation active and focuses content after path changes', async () => {
+    const { router } = renderApp('/missing');
+    await act(async () => {
+      await router.navigate('/audit/events/invalid-id');
+    });
+    expect(
+      screen.getByRole('link', { name: 'Audit explorer' }),
+    ).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute(
+      'aria-current',
+    );
+    expect(screen.getByRole('main')).toHaveFocus();
+    await act(async () => {
+      await router.navigate('/audit/dlq/%20');
+    });
+    expect(
+      screen.getByRole('link', { name: 'Dead-letter queue' }),
+    ).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
+  it('preserves keyboard focus for query-only navigation and provides a skip target', async () => {
+    const { router } = renderApp('/audit/events/invalid-id');
+    const compact = screen.getByRole('button', { name: 'Compact layout' });
+    compact.focus();
+    await act(async () => {
+      await router.navigate('/audit/events/invalid-id?view=metadata');
+    });
+    expect(compact).toHaveFocus();
+    expect(
+      screen.getByRole('link', { name: 'Skip to content' }),
+    ).toHaveAttribute('href', '#main-content');
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1');
+  });
   it('renders the home route within the application shell', () => {
     renderApp();
     expect(
@@ -108,6 +149,36 @@ describe('application foundation', () => {
 });
 
 describe('Auth0 integration', () => {
+  it('protects timeline bookmarks and preserves pagination in the return path', async () => {
+    auth.isAuthenticated = false;
+    const path = '/audit/timeline/flow?page=2&limit=25';
+    renderApp(path);
+    await screen.findByRole('heading', {
+      name: 'Sign in to Audit Trail Console',
+    });
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Log in' }));
+    expect(auth.loginWithRedirect).toHaveBeenCalledWith({
+      appState: { returnTo: path },
+    });
+  });
+  it('protects direct event detail bookmarks and preserves their return path', async () => {
+    auth.isAuthenticated = false;
+    const path = '/audit/events/00000000-0000-4000-8000-000000000001';
+    renderApp(path);
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Sign in to Audit Trail Console',
+      }),
+    ).toBeInTheDocument();
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Log in' }));
+    expect(auth.loginWithRedirect).toHaveBeenCalledWith({
+      appState: { returnTo: path },
+    });
+  });
   it('protects bookmarked explorer searches and preserves their return path', async () => {
     auth.isAuthenticated = false;
     renderApp('/audit/events?actor=test&page=2');

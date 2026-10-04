@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppStore } from '../src/app/store';
 import { createTokenSession } from '../src/auth/tokenSession';
 import { AuditExplorerPage } from '../src/features/audit/AuditExplorerPage';
-import { EventDetailUnavailablePage } from '../src/pages/EventDetailUnavailablePage';
+import { EventDetailPage } from '../src/features/audit/EventDetailPage';
 import { baseApi } from '../src/services/baseApi';
 import type { AuditEventDetail } from '../src/types/audit';
 
@@ -58,9 +58,12 @@ function mount(
   path = '/audit/events',
   handler: (url: URL) => Response | Promise<Response> = page,
 ) {
-  const fetch = vi.fn(async (request: Request) =>
-    handler(new URL(request.url)),
-  );
+  const fetch = vi.fn(async (request: Request) => {
+    const url = new URL(request.url);
+    return url.pathname === `/audit/events/${event.id}`
+      ? json(event)
+      : handler(url);
+  });
   vi.stubGlobal('fetch', fetch);
   const session = createTokenSession();
   session.setProvider(async () => 'explorer-token');
@@ -69,7 +72,7 @@ function mount(
   const router = createMemoryRouter(
     [
       { path: '/audit/events', element: <AuditExplorerPage /> },
-      { path: '/audit/events/:id', element: <EventDetailUnavailablePage /> },
+      { path: '/audit/events/:id', element: <EventDetailPage /> },
     ],
     { initialEntries: [path] },
   );
@@ -82,6 +85,37 @@ function mount(
 }
 
 describe('audit explorer', () => {
+  it('keeps search and pagination usable with a million-event total and a full 100-row page', async () => {
+    const items = Array.from({ length: 100 }, (_, index) => ({
+      ...event,
+      id: `database-${index}`,
+      actor: { id: `actor-${index}` },
+    }));
+    const { fetch, router } = mount('/audit/events?limit=100', (url) =>
+      page(url, items, 1_000_000),
+    );
+    await screen.findByText(`${(1_000_000).toLocaleString()} matching events`);
+    expect(screen.getAllByRole('row')).toHaveLength(101);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('Actor'), 'actor-99');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: 'Apply filters' }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    await screen.findByText('Page 1 of 10000');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Next page' })).toBeEnabled(),
+    );
+    await user.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(new URLSearchParams(router.state.location.search).get('actor')).toBe(
+      'actor-99',
+    );
+    expect(new URLSearchParams(router.state.location.search).get('page')).toBe(
+      '2',
+    );
+    expect(new URLSearchParams(router.state.location.search).get('limit')).toBe(
+      '100',
+    );
+  });
   it('requests an authenticated page and renders all columns and database-id links', async () => {
     const { fetch, router } = mount();
     const link = await screen.findByRole('link', { name: 'USER LOGIN' });

@@ -10,19 +10,23 @@ export interface DashboardStatisticsFilters {
   severity?: string;
 }
 
-export const dashboardApi = baseApi.injectEndpoints({
-  endpoints: (builder) => ({
-    dashboardStatistics: builder.query<
-      AuditStatistics,
-      DashboardStatisticsFilters
-    >({
-      query: (params) => ({ url: '/audit/statistics', params }),
+export const dashboardApi = baseApi
+  .enhanceEndpoints({ addTagTypes: ['Dashboard'] })
+  .injectEndpoints({
+    endpoints: (builder) => ({
+      dashboardStatistics: builder.query<
+        AuditStatistics,
+        DashboardStatisticsFilters
+      >({
+        query: (params) => ({ url: '/audit/statistics', params }),
+        providesTags: ['Dashboard'],
+      }),
+      latestAuditActivity: builder.query<PaginatedAuditResponse, void>({
+        query: () => ({ url: '/audit/events', params: { page: 1, limit: 10 } }),
+        providesTags: ['Dashboard'],
+      }),
     }),
-    latestAuditActivity: builder.query<PaginatedAuditResponse, void>({
-      query: () => ({ url: '/audit/events', params: { page: 1, limit: 10 } }),
-    }),
-  }),
-});
+  });
 
 export const { useDashboardStatisticsQuery, useLatestAuditActivityQuery } =
   dashboardApi;

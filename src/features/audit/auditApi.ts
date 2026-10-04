@@ -1,5 +1,8 @@
 import { baseApi } from '../../services/baseApi';
-import type { PaginatedAuditResponse } from '../../types/audit';
+import type {
+  AuditEventDetail,
+  PaginatedAuditResponse,
+} from '../../types/audit';
 import type { AuditSearch } from './searchParams';
 
 export const auditApi = baseApi.injectEndpoints({
@@ -7,6 +10,9 @@ export const auditApi = baseApi.injectEndpoints({
     auditEvents: builder.query<PaginatedAuditResponse, AuditSearch>({
       query: (params) => ({ url: '/audit/events', params }),
     }),
+    auditEventDetail: builder.query<AuditEventDetail, string>({
+      query: (id) => `/audit/events/${encodeURIComponent(id)}`,
+    }),
   }),
 });
-export const { useAuditEventsQuery } = auditApi;
+export const { useAuditEventsQuery, useAuditEventDetailQuery } = auditApi;

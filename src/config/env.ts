@@ -5,6 +5,12 @@ export const env = {
   auth0Domain: import.meta.env.VITE_AUTH0_DOMAIN?.trim() || '',
   auth0ClientId: import.meta.env.VITE_AUTH0_CLIENT_ID?.trim() || '',
   auth0Audience: import.meta.env.VITE_AUTH0_AUDIENCE?.trim() || '',
+  auth0PermissionsClaim:
+    import.meta.env.VITE_AUTH0_PERMISSIONS_CLAIM?.trim() ||
+    'https://audit-trail.example.com/permissions',
+  auth0TenantClaim:
+    import.meta.env.VITE_AUTH0_TENANT_CLAIM?.trim() ||
+    'https://audit-trail.example.com/tenantId',
   launchDarklyClientId:
     import.meta.env.VITE_LAUNCHDARKLY_CLIENT_ID?.trim() || '',
 };

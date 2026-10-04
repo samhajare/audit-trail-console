@@ -2,11 +2,16 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { baseApi } from '../../services/baseApi';
 import { uiReducer } from './uiSlice';
+import { liveReducer } from '../../features/live/liveSlice';
 import { tokenSession, type TokenSession } from '../../auth/tokenSession';
 
 export const createAppStore = (session: TokenSession = tokenSession) =>
   configureStore({
-    reducer: { ui: uiReducer, [baseApi.reducerPath]: baseApi.reducer },
+    reducer: {
+      ui: uiReducer,
+      live: liveReducer,
+      [baseApi.reducerPath]: baseApi.reducer,
+    },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         thunk: { extraArgument: { tokenSession: session } },

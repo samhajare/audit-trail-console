@@ -7,6 +7,7 @@ import {
 import { getDayRange } from './dayRange';
 import { QueryError } from './QueryError';
 import type { AuditEventType } from '../../types/audit';
+import { LiveActivity } from '../live/LiveActivity';
 
 const eventTypes: { type: AuditEventType; label: string }[] = [
   { type: 'USER_LOGIN', label: 'User login' },
@@ -81,6 +82,7 @@ export function DashboardPage() {
           Refresh dashboard
         </button>
       </div>
+      <LiveActivity />
       {busy && <p role="status">Updating dashboard…</p>}
       <div className="dashboard-metrics">
         <section className="panel" aria-labelledby="today-heading">

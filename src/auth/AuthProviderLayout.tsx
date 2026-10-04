@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { env } from '../config/env';
 import { AuthSessionBridge } from './AuthSessionBridge';
 import { safeReturnTo } from './returnTo';
+import { FeatureFlagsProvider } from '../features/flags/FeatureFlagsProvider';
 
 export function AuthProviderLayout() {
   const navigate = useNavigate();
@@ -30,7 +31,9 @@ export function AuthProviderLayout() {
       }}
     >
       <AuthSessionBridge />
-      <Outlet />
+      <FeatureFlagsProvider>
+        <Outlet />
+      </FeatureFlagsProvider>
     </Auth0Provider>
   );
 }

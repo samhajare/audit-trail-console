@@ -1,15 +1,24 @@
 export function createTokenSession() {
   let provider: (() => Promise<string | undefined>) | undefined;
   let revision = 0;
+  const listeners = new Set<() => void>();
   return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
     setProvider(next: (() => Promise<string | undefined>) | undefined) {
       provider = next;
       revision += 1;
+      listeners.forEach((listener) => listener());
     },
     suspend() {
       const previous = provider;
       provider = undefined;
       const suspendedRevision = ++revision;
+      listeners.forEach((listener) => listener());
       return () => {
         // A failed logout may resume only the session that began it.
         if (revision === suspendedRevision) {

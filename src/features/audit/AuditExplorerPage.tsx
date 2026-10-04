@@ -1,23 +1,16 @@
+import { AuditEventTable } from './AuditEventTable';
 import { skipToken } from '@reduxjs/toolkit/query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuditEventsQuery } from './auditApi';
 import { AuditFilterForm } from './AuditFilterForm';
 import { parseAuditSearch, serializeAuditSearch } from './searchParams';
 import { QueryError } from '../../components/QueryError';
-
-const timestampFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
-function timestamp(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? 'Unknown timestamp'
-    : timestampFormat.format(date);
-}
+import { useAuditFlag } from '../flags/useAuditFlag';
+import { AuditSearchTools } from './AuditSearchTools';
 
 export function AuditExplorerPage() {
   const [params, setParams] = useSearchParams();
+  const enhancedSearch = useAuditFlag('audit-new-search');
   const parsed = parseAuditSearch(params);
   const query = parsed.query;
   const result = useAuditEventsQuery(query ?? skipToken);
@@ -32,6 +25,13 @@ export function AuditExplorerPage() {
           zone.
         </p>
       </div>
+      {enhancedSearch && (
+        <AuditSearchTools
+          key={`search-tools:${params.toString()}`}
+          params={params}
+          apply={setParams}
+        />
+      )}
       <AuditFilterForm
         key={params.toString()}
         params={params}
@@ -69,68 +69,7 @@ export function AuditExplorerPage() {
                     : 'No events on this page. Choose a previous page or apply filters to start at page 1.'}
                 </p>
               ) : (
-                <div
-                  className="audit-table-scroll"
-                  role="region"
-                  aria-label="Audit event table"
-                  tabIndex={0}
-                >
-                  <table className="audit-table">
-                    <caption>Audit events, newest recorded first</caption>
-                    <thead>
-                      <tr>
-                        {[
-                          'Timestamp',
-                          'Event type',
-                          'Actor',
-                          'Action',
-                          'Resource',
-                          'Service',
-                          'Correlation ID',
-                          'Severity',
-                        ].map((label) => (
-                          <th key={label} scope="col">
-                            {label}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.items.map((event) => (
-                        <tr key={event.id}>
-                          <td>
-                            <time dateTime={event.timestamp}>
-                              {timestamp(event.timestamp)}
-                            </time>
-                          </td>
-                          <td>
-                            <Link
-                              to={`/audit/events/${encodeURIComponent(event.id)}`}
-                            >
-                              {event.eventType.replaceAll('_', ' ')}
-                            </Link>
-                          </td>
-                          <td>{event.actor.id}</td>
-                          <td>{event.action}</td>
-                          <td>
-                            {event.resource.type}: {event.resource.id}
-                          </td>
-                          <td>
-                            {typeof event.context.service === 'string'
-                              ? event.context.service
-                              : 'Not provided'}
-                          </td>
-                          <td>{event.correlationId}</td>
-                          <td>
-                            {typeof event.metadata.severity === 'string'
-                              ? event.metadata.severity
-                              : 'Not provided'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <AuditEventTable items={data.items} />
               )}
               <nav
                 className="audit-pagination"

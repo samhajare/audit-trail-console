@@ -15,7 +15,7 @@ export function QueryError({
       ? error.message
       : 'Unable to load this information. Please try again.';
   return (
-    <div>
+    <div className="query-error">
       <p role="alert">{message}</p>
       <button type="button" onClick={retry}>
         Retry {title.toLowerCase()}

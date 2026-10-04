@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAppStore } from '../src/app/store';
 import { createTokenSession } from '../src/auth/tokenSession';
 import { DashboardPage } from '../src/features/dashboard/DashboardPage';
-import { EventDetailUnavailablePage } from '../src/pages/EventDetailUnavailablePage';
+import { EventDetailPage } from '../src/features/audit/EventDetailPage';
 import { baseApi } from '../src/services/baseApi';
 import type { AuditEventDetail, AuditStatistics } from '../src/types/audit';
 
@@ -62,7 +62,7 @@ function mount(handler: (url: URL) => Response | Promise<Response>) {
   stores.push(store);
   const router = createMemoryRouter([
     { path: '/', element: <DashboardPage /> },
-    { path: '/audit/events/:id', element: <EventDetailUnavailablePage /> },
+    { path: '/audit/events/:id', element: <EventDetailPage /> },
   ]);
   render(
     <Provider store={store}>
@@ -72,6 +72,7 @@ function mount(handler: (url: URL) => Response | Promise<Response>) {
   return { fetch, router };
 }
 function successfulResponse(url: URL) {
+  if (url.pathname === `/audit/events/${event.id}`) return json(event);
   if (url.pathname.endsWith('/events'))
     return json({
       items: [event],
@@ -223,7 +224,7 @@ describe('dashboard', () => {
     ).toBeInTheDocument();
   });
 
-  it('links using the database id and reaches the reserved detail route', async () => {
+  it('links using the database id and reaches the event detail route', async () => {
     const { router } = mount(successfulResponse);
     const link = await screen.findByRole('link', {
       name: 'USER LOGIN — signed in',
