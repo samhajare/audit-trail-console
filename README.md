@@ -24,13 +24,44 @@ Set the Auth0 variables described below before signing in. Set the public Launch
 
 Create an Auth0 **Single Page Application**. Set Allowed Callback URLs, Allowed Logout URLs, and Allowed Web Origins to `http://localhost:5173` for local development. If Vite uses a different port, update all three. Configure equivalent HTTPS origins when deploying.
 
-Set `VITE_AUTH0_DOMAIN` to your Auth0 domain without `https://`, `VITE_AUTH0_CLIENT_ID` to the SPA client ID, and `VITE_AUTH0_AUDIENCE` to the Auth0 API identifier used by `audit-trail-service`. The frontend and backend must use the same audience and issuer. Restart Vite after changing environment values. Never use an Auth0 client secret in a SPA.
+Set `VITE_AUTH0_DOMAIN` to your Auth0 domain without `https://` and `VITE_AUTH0_CLIENT_ID` to the SPA client ID. These two values enable sign-in with `window.location.origin` as the redirect URI. Your local `.env` should contain:
+
+```dotenv
+VITE_AUTH0_DOMAIN=dev-m68vosgh1w1zam6i.us.auth0.com
+VITE_AUTH0_CLIENT_ID=bUPHpyZAhmCRLDQfnuYFQUgS17jE0mtG
+```
+
+For authenticated backend requests, also set `VITE_AUTH0_AUDIENCE` to the Auth0 API identifier used by `audit-trail-service`. It can be blank for sign-in setup; the provider only requests an audience when configured. The frontend and backend must use the same audience and issuer for API access. Restart Vite after changing environment values. Never use an Auth0 client secret in a SPA.
 
 The root route is protected. Signed-out users see `/login`; Auth0 Universal Login returns them to their original local path. Signed-in users see their name/email and a logout button. Missing configuration, session loading, SDK errors, and login/logout failures have explicit UI states.
 
 Auth0 owns user context and token caching in memory through `useAuth0`. A session bridge exposes `getAccessTokenSilently` to RTK Query through thunk dependencies; tokens are never stored in Redux or manually persisted. Each API request obtains a token and sets its bearer header. Token retrieval failures return query errors without sending anonymous requests. The API cache is reset when the session changes or logout begins.
 
 Setup reference: [Auth0 React quickstart](https://auth0.com/docs/quickstart/spa/react).
+
+### Resolving "Audit access restricted" during local setup
+
+Successful sign-in does not grant audit permissions. For a minimal viewer setup:
+
+1. In Auth0, create/select the audit API and copy its **Identifier** to frontend `VITE_AUTH0_AUDIENCE` and backend `AUTH0_AUDIENCE`. Set backend `AUTH0_DOMAIN` to `dev-m68vosgh1w1zam6i.us.auth0.com`.
+2. Add the API permission `audit:read`. Enable **RBAC** and **Add Permissions in the Access Token** in that API's settings.
+3. Create the role `AUDIT_VIEWER`, give it that API's `audit:read` permission, and assign it to your user.
+4. Set frontend `VITE_AUTH0_PERMISSIONS_CLAIM=https://example.com/permissions`. Create a Post Login Action using the code below, deploy it, and add it to the Login flow. This minimal example exposes read access for the viewer role; keep the role's API grants aligned with it.
+
+```javascript
+exports.onExecutePostLogin = async (event, api) => {
+  if (event.client.client_id !== 'bUPHpyZAhmCRLDQfnuYFQUgS17jE0mtG') return;
+  const roles = event.authorization?.roles || [];
+  api.idToken.setCustomClaim(
+    'https://example.com/permissions',
+    roles.includes('AUDIT_VIEWER') ? ['audit:read'] : [],
+  );
+};
+```
+
+5. Restart frontend and backend, log out, and sign in again to get fresh tokens. The frontend reads the custom ID-token claim; the backend checks the API access token's permissions independently. Backend tenant isolation also requires the trusted tenant claim described in the service README.
+
+Reference: [Auth0 roles and ID-token claims](https://support.auth0.com/center/s/article/add-roles-and-permissions-to-the-id-token-using-actions).
 
 ## Foundation architecture
 

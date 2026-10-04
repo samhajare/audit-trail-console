@@ -7,13 +7,13 @@ import { FeatureFlagsProvider } from '../features/flags/FeatureFlagsProvider';
 
 export function AuthProviderLayout() {
   const navigate = useNavigate();
-  if (!env.auth0Domain || !env.auth0ClientId || !env.auth0Audience) {
+  if (!env.auth0Domain || !env.auth0ClientId) {
     return (
       <main className="panel">
         <h1>Authentication configuration required</h1>
         <p role="alert">
-          Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID, and VITE_AUTH0_AUDIENCE
-          in your environment, then restart the application.
+          Set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID in your environment,
+          then restart the application.
         </p>
       </main>
     );
@@ -24,7 +24,7 @@ export function AuthProviderLayout() {
       clientId={env.auth0ClientId}
       authorizationParams={{
         redirect_uri: window.location.origin,
-        audience: env.auth0Audience,
+        ...(env.auth0Audience ? { audience: env.auth0Audience } : {}),
       }}
       onRedirectCallback={(appState) => {
         void navigate(safeReturnTo(appState?.returnTo), { replace: true });

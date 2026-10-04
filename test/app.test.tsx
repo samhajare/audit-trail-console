@@ -293,6 +293,19 @@ describe('Auth0 integration', () => {
     expect(router.state.location.pathname).toBe('/');
   });
 
+  it('allows sign-in without requesting an API audience when it is blank', () => {
+    const original = env.auth0Audience;
+    env.auth0Audience = '';
+    try {
+      renderApp('/login');
+      expect(provider.options).toHaveProperty('authorizationParams', {
+        redirect_uri: window.location.origin,
+      });
+    } finally {
+      env.auth0Audience = original;
+    }
+  });
+
   it('shows a configuration error without mounting Auth0 when configuration is absent', () => {
     const original = env.auth0Domain;
     env.auth0Domain = '';
